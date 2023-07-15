@@ -1,36 +1,48 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import * as action from './store/actions';
-import { initialStore } from './store/store';
+import {
+    taskComplited,
+    titleChange,
+    taskDelited,
+    loadTasks,
+    getTasks,
+    getTasksLoadingStatus,
+    createdTask
+} from './store/task';
+import configureStore from './store/store';
+import { Provider, useSelector, useDispatch } from 'react-redux';
+import { getError } from './store/errors';
 
-const store = initialStore()
-console.log(store)
+const store = configureStore()
 
-const App = (params) => {
-    const [state, setState] = useState(store.getState())
+const App = () => {
+    const state = useSelector(getTasks())
+    const isLoading = useSelector(getTasksLoadingStatus())
+    const error = useSelector(getError())
+    const dispatch = useDispatch()
     useEffect(() => {
-        store.subscribe(() => {
-            setState(store.getState())
-        })
-    },[])
-    const completedTask = (taskid) => { 
-        console.log(taskid)
-        store.dispatch(action.taskComplited(taskid))
-    }
+        dispatch(loadTasks())
+    }, [])   
     const changeTitle = (taskid) => {
-         store.dispatch(action.titleChange(taskid))
+         dispatch(titleChange(taskid))
     }
     const delitedTask = (taskid) => {
-        store.dispatch(action.taskDelited(taskid))
+        dispatch(taskDelited(taskid))
     }
-
+    if (isLoading) {
+        return <h1>Loading...</h1>
+    }
+    if (error) {
+        return <p>{error}</p>
+    }
     return <><h1>App</h1>
+    <button onClick={() => dispatch(createdTask()) }>createPost</button>
     <ul>
         {state.map((el) => {
             return <li key={el.id}>
                 <p>{el.title}</p>
                 <p>{"Complited:" + el.completed}</p>
-                <button onClick={() => completedTask(el.id)}>
+                <button onClick={() => dispatch(taskComplited(el.id))}>
                     completed
                 </button>
                 <button onClick={() => changeTitle(el.id)}>Change Title</button>
@@ -44,8 +56,10 @@ const App = (params) => {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+    <React.StrictMode>
+        <Provider store={store}>
+            <App />
+        </Provider>
+    </React.StrictMode>
 );
 
